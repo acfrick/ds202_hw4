@@ -1,0 +1,104 @@
+---
+title: "hw4"
+author: "Allegra Frickel"
+date: "3/2/2019"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(datasets)
+?ChickWeight
+```
+
+1. Get a frequency breakdown of the number of chicks, their average weight and the standard deviation of the weights in each of the diets at the start of the study. Store the resulting data frame in a variable names weight0 and print.
+
+```{r}
+weight0 <- filter(ChickWeight, Time == 0) %>% group_by(Diet) %>% summarize(n=n(), mean=mean(weight), sd=sd(weight))
+weight0
+```
+
+2. Each chick should have twelve weight measurements. Use the dplyr package to identify how many measurements there are for each chick. Extract a subset of the data for all chicks with complete information, name the data set complete, and print the first three rows.
+
+```{r}
+a <- ChickWeight %>% group_by(Chick) %>% summarize(n=n()) %>% arrange(n, desc(n)) %>% filter(n==12)
+b <- a$Chick
+b
+complete <- ChickWeight %>% filter(Chick %in% b)
+complete[1:3, ]
+```
+
+3. In the complete data set introduce a new variable that measures the current weight difference compared to day 0. Name this variable weightgain and print the first 3 rows of the new data frame.
+
+```{r}
+dat <- complete %>% group_by(Chick) %>% mutate(weight_0 = weight[Time == 0])
+complete <- complete %>% mutate(weightgain = dat$weight-dat$weight_0)
+complete[1:3, ]
+```
+
+4. Use ggplot2 to create side-by-side boxplots of weightgain and Diet for day21. Describe the relationship in 2-3 sentences. Change the order of the categories in the Diet variable such that the boxplots are ordered by median weightgain, and the lower limit of the y axis should be 0.
+
+```{r}
+ggplot(complete, aes(x=Diet, y=weightgain)) + geom_boxplot() + ylab('Gained Weight')
+```
+
+This relationship displays that the chicks on the fourth diet gained the most weight on average. However, the third diet had the chick that gained the most weight, most chicks with the highest weight gained within the inner quartile range and highest third quartile.
+
+5. Answer the following question using numerical and graphical summary: Which chick gained the most weight and which gained the least weight? What diets were they on?
+
+```{r}
+complete %>% arrange(desc(weightgain)) %>% filter(Time == 21) %>% filter(weightgain==max(weightgain) | weightgain==min(weightgain))
+```
+
+```{r}
+ggplot(complete, aes(x=Chick, y=weightgain, fill=Diet)) + geom_boxplot()
+```
+
+The chick that gained the most weight was chick 35, weighing 373 gm on Diet 3. The chick that gained the least amount of weight was chick 24, weighing 74 gm on Diet 2.
+
+6. For the chicks with the least and the most weight at time 0, plot their growth trajectories over time.
+
+```{r}
+leastmost <- complete %>% arrange(weight) %>% filter(Time==0) %>% filter(weight==min(weight) | weight==max(weight))
+leastmostchicks <- leastmost$Chick
+df <- complete %>% filter(Chick %in% leastmostchicks) %>% arrange(Time) %>% group_by(Time)
+df %>% ggplot(aes(x=Time, y=weight, color=Chick)) + geom_point() + geom_line() + ylab('Weight') + xlab('Time in Days') + ggtitle('Growth Trajectory for the Lightest and Heaviest Chicks')
+```
+
+7. What else do you find interesting in the dataset? Show your exploratory analysis.
+
+Counfounding variables? Based on the mapped trajectory above, it is noticeable that there were some chicks that peaked in weight and lost weight at some points. This could indicate some other behavior during this experiment. One behavior that may affect the weightgain or weightloss of the chick is its activity during the day.
+
+I am also interested because there is not an even distribution of chicks among the different diets, as displayed in the below tables. That could lead to some bias or skewness.
+
+```{r}
+frequency <- filter(ChickWeight, Time == 0) %>% group_by(Diet) %>% summarize(n=n())
+frequency
+```
+
+```{r}
+frequency <- filter(complete, Time == 0) %>% group_by(Diet) %>% summarize(n=n())
+frequency
+```
+
+Which protein diet was the most effective? The below boxplots that were also displayed above display that the fourth diet was most effective overall.
+
+```{r}
+ggplot(complete, aes(x=Diet, y=weightgain)) + geom_boxplot()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
